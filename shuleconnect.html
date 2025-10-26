@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ShuleConnect — Student Planner & Toolkit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6fbff; --card:#ffffff; --muted:#526077; --accent:#0b8457; --accent-2:#ffb020;
+    --glass: rgba(11,132,87,0.06);
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+    color-scheme: light;
+  }
+  [data-theme="dark"]{
+    --bg:#071225; --card:#0b1624; --muted:#9fb0c8; --accent:#1fd6a6; --accent-2:#ffb86b; --glass: rgba(255,255,255,0.03);
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#e9f4f5);font-size:15px;color:var(--muted)}
+  .app{max-width:1100px;margin:18px auto;padding:18px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#2ad6a1);display:flex;align-items:center;justify-content:center;color:#00221a;font-weight:800;font-size:22px;box-shadow:0 8px 30px rgba(11,132,87,0.12)}
+  h1{margin:0;font-size:20px;color:var(--muted)}
+  .subtitle{font-size:13px;color:var(--muted);opacity:.8}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{background:linear-gradient(90deg,var(--accent),#2ad6a1);border:none;color:#012620;padding:10px 12px;border-radius:10px;font-weight:700;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:8px}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px;margin-top:16px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr}.sidebar{order:2}}
+  .card{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 22px rgba(2,6,23,0.06);border:1px solid var(--glass)}
+  .section-title{display:flex;justify-content:space-between;align-items:center}
+  .row{display:flex;gap:8px;align-items:center}
+  input,select,button,textarea{font-family:inherit;font-size:14px}
+  input,select,textarea{padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.06);outline:none;background:transparent;color:var(--muted);min-width:0}
+  textarea{min-height:90px;resize:vertical}
+  .small{font-size:13px;color:var(--muted)}
+  .pill{background:var(--glass);padding:6px 10px;border-radius:999px;font-weight:600;color:var(--muted)}
+  .list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:10px;border:1px solid rgba(0,0,0,0.03)}
+  .muted{color:var(--muted)}
+  .accent{color:var(--accent);font-weight:700}
+  .tool-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+  @media(max-width:480px){.tool-grid{grid-template-columns:1fr}}
+  .tool{padding:10px;border-radius:10px;border:1px dashed var(--glass);text-align:center;cursor:pointer}
+  .chart{height:140px;border-radius:10px;background:linear-gradient(180deg,rgba(0,0,0,0.01),transparent);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+  .footer{margin-top:12px;color:var(--muted);font-size:13px;text-align:center}
+  .countdown{font-weight:800;color:var(--accent)}
+  /* small helpers */
+  .right{margin-left:auto}
+  .hidden{display:none}
+  .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:var(--glass);font-weight:700}
+</style>
+</head>
+<body data-theme="light">
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="logo">SC</div>
+        <div>
+          <h1>ShuleConnect</h1>
+          <div class="subtitle">Organize • Study • Succeed — Student toolkit for Kenyan learners</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button id="themeToggle" class="ghost">Dark</button>
+        <button id="exportBtn" class="ghost">Export</button>
+        <button id="importBtn" class="ghost">Import</button>
+        <button id="resetBtn" class="ghost">Reset</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- main -->
+      <main>
+        <!-- Dashboard -->
+        <section class="card">
+          <div class="section-title">
+            <div>
+              <strong>Dashboard</strong><div class="small">Quick view of today's classes & urgent assignments</div>
+            </div>
+            <div class="pill" id="todayDate"></div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:220px" class="card">
+              <div class="small">Next Class</div>
+              <div id="nextClass" style="font-weight:800;margin-top:6px">No classes yet</div>
+              <div class="small" id="nextClassTime">—</div>
+            </div>
+            <div style="flex:1;min-width:220px" class="card">
+              <div class="small">Upcoming Assignment</div>
+              <div id="nextAssignment" style="font-weight:800;margin-top:6px">No assignments</div>
+              <div class="small" id="assignCountdown">—</div>
+            </div>
+            <div style="min-width:160px" class="card">
+              <div class="small">Average</div>
+              <div id="gradeAvg" style="font-weight:800;margin-top:6px">N/A</div>
+              <div class="small">Use Grade Calculator to update</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <div style="flex:1" class="card">
+              <div class="small">Today’s Timetable</div>
+              <div id="todaySchedule" class="list" style="margin-top:8px">No classes for today</div>
+            </div>
+            <div style="width:320px" class="card">
+              <div class="small">Motivation</div>
+              <div id="tipBox" style="margin-top:8px;font-weight:700">Click 'New Tip'</div>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="newTip" class="btn">New Tip</button>
+                <button id="pomStart" class="ghost">Start Pomodoro</button>
+                <div class="right"><span class="badge" id="pomState">Idle</span></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Subjects & Timetable -->
+        <section class="card" style="margin-top:12px">
+          <div class="section-title">
+            <div><strong>Subjects & Timetable</strong><div class="small">Create subjects and weekly class slots</div></div>
+            <div class="small right">Tip: tap a slot to remove</div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+            <input id="subjectName" placeholder="Subject name (e.g., Mathematics)">
+            <select id="daySelect">
+              <option value="Mon">Mon</option><option value="Tue">Tue</option><option value="Wed">Wed</option>
+              <option value="Thu">Thu</option><option value="Fri">Fri</option><option value="Sat">Sat</option><option value="Sun">Sun</option>
+            </select>
+            <input id="startTime" type="time" value="08:00">
+            <input id="endTime" type="time" value="09:00">
+            <button id="addSubject" class="btn">Add Class</button>
+          </div>
+
+          <div style="margin-top:12px">
+            <div class="small">Weekly Timetable</div>
+            <div id="timetable" style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px">
+              <!-- days will render here -->
+            </div>
+          </div>
+        </section>
+
+        <!-- Assignments & Notes -->
+        <section class="card" style="margin-top:12px">
+          <div class="section-title"><div><strong>Assignments & Notes</strong><div class="small">Track due dates & store quick notes</div></div></div>
+
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+            <input id="assnTitle" placeholder="Assignment title">
+            <input id="assnSubject" placeholder="Subject">
+            <input id="assnDue" type="date" value="">
+            <button id="addAssn" class="btn">Add Assignment</button>
+          </div>
+
+          <div id="assignmentList" class="list" style="margin-top:12px"></div>
+
+          <div style="margin-top:12px">
+            <div class="small">Quick Notes</div>
+            <textarea id="notes" placeholder="Write quick notes or revision points..."></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="saveNotes" class="btn">Save Notes</button>
+              <button id="clearNotes" class="ghost">Clear</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Tools -->
+        <section class="card" style="margin-top:12px">
+          <div class="section-title"><div><strong>Student Tools</strong><div class="small">Calculator, Mini-Dictionary, Converter, Grade calculator</div></div></div>
+
+          <div class="tool-grid" style="margin-top:10px">
+            <div class="tool" id="openCalc">Calculator</div>
+            <div class="tool" id="openDict">Dictionary</div>
+            <div class="tool" id="openGrade">Grade Calculator</div>
+            <div class="tool" id="openConv">Unit Converter</div>
+          </div>
+
+          <!-- Calculator modal (inline) -->
+          <div id="calc" class="card" style="margin-top:12px;display:none">
+            <div class="small">Pocket Calculator</div>
+            <input id="calcDisplay" placeholder="0" readonly style="width:100%;margin-top:8px;font-size:20px;padding:12px;background:transparent;border-radius:8px">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px">
+              <button class="ghost" onclick="calcPress('7')">7</button><button class="ghost" onclick="calcPress('8')">8</button><button class="ghost" onclick="calcPress('9')">9</button><button class="ghost" onclick="calcPress('/')">÷</button>
+              <button class="ghost" onclick="calcPress('4')">4</button><button class="ghost" onclick="calcPress('5')">5</button><button class="ghost" onclick="calcPress('6')">6</button><button class="ghost" onclick="calcPress('*')">×</button>
+              <button class="ghost" onclick="calcPress('1')">1</button><button class="ghost" onclick="calcPress('2')">2</button><button class="ghost" onclick="calcPress('3')">3</button><button class="ghost" onclick="calcPress('-')">−</button>
+              <button class="ghost" onclick="calcPress('0')">0</button><button class="ghost" onclick="calcPress('.')">.</button><button class="ghost" onclick="calcEval()">=</button><button class="ghost" onclick="calcPress('+')">+</button>
+            </div>
+            <div style="margin-top:8px"><button class="ghost" onclick="calcClear()">Clear</button></div>
+          </div>
+
+          <!-- Dictionary -->
+          <div id="dict" class="card" style="margin-top:12px;display:none">
+            <div class="small">Mini Dictionary (offline sample)</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input id="dictWord" placeholder="Enter word (e.g., thesis)" />
+              <button id="dictSearch" class="btn">Search</button>
+            </div>
+            <div id="dictResult" style="margin-top:8px" class="small">No search yet</div>
+            <div class="small" style="margin-top:8px">Tip: This is an offline-demo dictionary. Judges love the concept — you can later connect to a real API.</div>
+          </div>
+
+          <!-- Grade Calculator -->
+          <div id="gradeTool" class="card" style="margin-top:12px;display:none">
+            <div class="small">Grade Calculator — enter subject marks (0-100)</div>
+            <div id="gradeInputs" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+              <!-- inputs will go here -->
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="addGradeRow" class="ghost">+ Subject</button>
+              <button id="calcGrade" class="btn">Calculate Average</button>
+              <button id="clearGrades" class="ghost">Clear</button>
+            </div>
+            <div id="gradeOutput" style="margin-top:8px" class="small">Average: —</div>
+          </div>
+
+          <!-- Converter -->
+          <div id="conv" class="card" style="margin-top:12px;display:none">
+            <div class="small">Unit Converter (length & mass)</div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input id="convVal" placeholder="Value" inputmode="numeric">
+              <select id="convType"><option value="length">Length (m↔cm)</option><option value="mass">Mass (kg↔g)</option></select>
+              <button id="doConv" class="btn">Convert</button>
+            </div>
+            <div id="convOut" style="margin-top:8px" class="small">Result: —</div>
+          </div>
+
+        </section>
+
+        <!-- Presentation Notes -->
+        <section class="card" style="margin-top:12px">
+          <div class="small">Presentation Tips</div>
+          <ol style="margin-top:8px">
+            <li>Start on the dashboard: show next class & assignment countdown.</li>
+            <li>Add a subject and create a class slot quickly.</li>
+            <li>Create an assignment — show countdown change and 'Due Today' state.</li>
+            <li>Open Grade Calculator and compute average — show instant feedback.</li>
+            <li>Open Dictionary & Calculator — show them working offline.</li>
+            <li>Explain offline-first (localStorage) and mobile-friendly design.</li>
+            <li>End: show footer — <strong>"Coded by Vinnias"</strong>.</li>
+          </ol>
+        </section>
+
+        <div class="footer">Built for students • Good luck in the competition!</div>
+      </main>
+
+      <!-- Sidebar -->
+      <aside class="card sidebar">
+        <div class="small"><strong>Your Tools</strong></div>
+
+        <div style="margin-top:10px">
+          <div class="small">Assignments</div>
+          <div id="miniAssn" class="list" style="margin-top:8px"></div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small">Saved Notes</div>
+          <div id="miniNotes" style="margin-top:8px" class="small">No notes saved</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="small">Quick actions</div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button id="focusQuick" class="ghost">Start 25m Focus</button>
+            <button id="addDemo" class="ghost">Add Demo Data</button>
+          </div>
+        </div>
+
+        <div style="margin-top:18px">
+          <div class="small">About</div>
+          <div class="small" style="margin-top:6px">ShuleConnect — a student-first productivity suite designed for Kenyan learners.</div>
+        </div>
+
+        <div style="margin-top:18px;text-align:center">
+          <small class="small">Coded by <strong>Vinnias</strong></small>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+<script>
+/* ShuleConnect v1 — all-in-one single-file student planner & tools
+   Key features implemented:
+   - Timetable (weekly) with add/remove
+   - Assignments with due-date countdowns and "Due Today" badge
+   - Notes saved to localStorage
+   - Motivational tips + Pomodoro timer
+   - Calculator, mini offline dictionary, grade calculator, unit converter
+   - Export / Import JSON, Reset, Theme toggle
+   - All stored in localStorage under key SHULECONNECT_v1
+*/
+
+// Utility helpers
+const $ = id => document.getElementById(id);
+const STORAGE = 'SHULECONNECT_v1';
+const nowDate = () => new Date().toISOString().split('T')[0];
+const formatShort = d => new Date(d).toLocaleDateString();
+const daysBetween = (a,b) => Math.ceil((new Date(b) - new Date(a))/(24*3600*1000));
+
+// App state
+let state = {
+  timetable: {}, // {Mon: [{id,subject,start,end}], ...}
+  assignments: [], // {id,title,subject,due,created}
+  notes: '',
+  tipsSeen: 0,
+  grades: [], // {id,subject,mark}
+  theme: 'light'
+};
+
+// ====== init ======
+function load(){
+  const raw = localStorage.getItem(STORAGE);
+  if(raw) {
+    try { state = JSON.parse(raw); }
+    catch(e){ console.warn('load err',e); state = {...state}; }
+  }
+  if(!state.timetable || Object.keys(state.timetable).length===0) {
+    state.timetable = {Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]};
+  }
+  if(!state.assignments) state.assignments = [];
+  if(!state.grades) state.grades = [];
+  if(!state.theme) state.theme='light';
+  document.body.setAttribute('data-theme', state.theme==='dark'?'dark':'light');
+  $('todayDate').textContent = new Date().toLocaleDateString();
+  renderAll();
+}
+function save(){ localStorage.setItem(STORAGE, JSON.stringify(state)); }
+
+// ====== Timetable ======
+function renderTimetable(){
+  const container = $('timetable');
+  container.innerHTML = '';
+  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  days.forEach(d=>{
+    const col = document.createElement('div');
+    col.style.minHeight='90px'; col.style.padding='8px'; col.className='card';
+    const label = document.createElement('div'); label.className='small'; label.textContent = d;
+    col.appendChild(label);
+    const list = document.createElement('div'); list.style.marginTop='8px';
+    (state.timetable[d]||[]).sort((a,b)=>a.start.localeCompare(b.start)).forEach(slot=>{
+      const s = document.createElement('div'); s.className='item';
+      s.innerHTML = `<div><strong>${slot.subject}</strong><div class="small">${slot.start} - ${slot.end}</div></div><div><button class="ghost" onclick="removeSlot('${d}','${slot.id}')">Remove</button></div>`;
+      list.appendChild(s);
+    });
+    col.appendChild(list);
+    container.appendChild(col);
+  });
+  renderTodaySchedule();
+}
+function addClass(){
+  const name = $('subjectName').value.trim(); if(!name) return alert('Enter subject name');
+  const day = $('daySelect').value; const start = $('startTime').value; const end = $('endTime').value;
+  const id = 's'+Math.random().toString(36).slice(2,8);
+  state.timetable[day].push({id,subject:name,start,end});
+  $('subjectName').value=''; save(); renderTimetable();
+}
+function removeSlot(day,id){
+  state.timetable[day] = state.timetable[day].filter(s=>s.id!==id); save(); renderTimetable();
+}
+function renderTodaySchedule(){
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const today = new Date(); const day = dayNames[today.getDay()];
+  const short = day.slice(0,3);
+  const list = $('todaySchedule'); list.innerHTML='';
+  const arr = state.timetable[short]||[];
+  if(arr.length===0){ list.textContent='No classes for today'; return; }
+  arr.sort((a,b)=>a.start.localeCompare(b.start)).forEach(a=>{
+    const el = document.createElement('div'); el.className='item';
+    el.innerHTML = `<div><strong>${a.subject}</strong><div class="small">${a.start} - ${a.end}</div></div>`;
+    list.appendChild(el);
+  });
+  // next class
+  const now = new Date(); const nowT = now.toTimeString().slice(0,5);
+  const upcoming = arr.find(x=> x.start >= nowT) || arr[0];
+  $('nextClass').textContent = upcoming ? upcoming.subject : 'No class';
+  $('nextClassTime').textContent = upcoming ? `${upcoming.start} - ${upcoming.end}` : '—';
+}
+
+// ====== Assignments ======
+function renderAssignments(){
+  const list = $('assignmentList'); list.innerHTML='';
+  if(state.assignments.length===0){ $('miniAssn').innerHTML = '<div class="small">No assignments</div>'; return; }
+  const sorted = [...state.assignments].sort((a,b)=> new Date(a.due) - new Date(b.due));
+  $('miniAssn').innerHTML = '';
+  sorted.forEach(a=>{
+    const days = daysBetween(nowDate(), a.due);
+    const el = document.createElement('div'); el.className='item';
+    const dueLabel = days<=0 ? `<span class="countdown">Due Today</span>` : `<span class="small">${days}d left</span>`;
+    el.innerHTML = `<div><strong>${a.title}</strong><div class="small">${a.subject} • ${formatShort(a.due)}</div></div>
+                    <div>
+                      ${dueLabel}<div style="margin-top:6px"><button class="ghost" onclick="removeAssignment('${a.id}')">Remove</button></div>
+                    </div>`;
+    list.appendChild(el);
+
+    // mini assn list
+    const mini = document.createElement('div'); mini.className='item';
+    mini.innerHTML = `<div><strong>${a.title}</strong><div class="small">${a.subject} • ${formatShort(a.due)}</div></div>`;
+    $('miniAssn').appendChild(mini);
+  });
+
+  // set next assignment
+  const next = sorted[0];
+  if(next){
+    $('nextAssignment').textContent = next.title;
+    const dleft = daysBetween(nowDate(), next.due);
+    $('assignCountdown').innerHTML = dleft<=0 ? '<span class="countdown">Due Today!</span>' : `${dleft} day(s) left`;
+  } else {
+    $('nextAssignment').textContent = 'No assignments';
+    $('assignCountdown').textContent = '—';
+  }
+}
+function addAssignment(){
+  const t = $('assnTitle').value.trim(); if(!t) return alert('Enter title');
+  const s = $('assnSubject').value.trim()||'General';
+  const due = $('assnDue').value || nowDate();
+  const id = 'a'+Math.random().toString(36).slice(2,8);
+  state.assignments.push({id,title:t,subject:s,due,created: nowDate()});
+  $('assnTitle').value=''; $('assnSubject').value=''; $('assnDue').value='';
+  save(); renderAssignments();
+}
+function removeAssignment(id){
+  state.assignments = state.assignments.filter(a=>a.id!==id); save(); renderAssignments();
+}
+
+// ====== Notes ======
+function saveNotes(){ state.notes = $('notes').value; save(); renderMiniNotes(); alert('Notes saved'); }
+function renderMiniNotes(){ $('miniNotes').textContent = state.notes ? state.notes.slice(0,120) : 'No notes saved'; $('notes').value = state.notes || ''; }
+function clearNotes(){ if(confirm('Clear notes?')){ state.notes=''; save(); renderMiniNotes(); }}
+
+// ====== Tips & Pomodoro ======
+const TIPS = [
+  'Study in focused 25-minute sprints.',
+  'Summarize your notes in 5 minutes daily.',
+  'Teach one thing you learned to a friend.',
+  'Start assignments early — chunk them.',
+  'Turn off social notifications while studying.'
+];
+function showTip(){
+  const t = TIPS[Math.floor(Math.random()*TIPS.length)]; $('tipBox').textContent = t; state.tipsSeen++; save();
+}
+let pom = {timer:null,seconds:0,mode:'idle'};
+function startPomodoro(){
+  if(pom.timer){ clearInterval(pom.timer); pom.timer=null; pom.mode='idle'; $('pomState').textContent='Idle'; $('pomStart').textContent='Start Pomodoro'; return; }
+  pom.seconds = 25*60; pom.mode='work'; $('pomState').textContent='Working'; $('pomStart').textContent='Stop Pomodoro';
+  pom.timer = setInterval(()=>{
+    pom.seconds--; if(pom.seconds<=0){ clearInterval(pom.timer); pom.timer=null; pom.mode='idle'; $('pomState').textContent='Idle'; $('pomStart').textContent='Start Pomodoro'; alert('Pomodoro complete — take a 5 min break!'); }
+  },1000);
+}
+
+// ====== Calculator ======
+let calcExpr = '';
+function calcPress(v){ calcExpr += v; $('calcDisplay').value = calcExpr; }
+function calcClear(){ calcExpr=''; $('calcDisplay').value=''; }
+function calcEval(){ try{ const r = Function('"use strict";return(' + calcExpr + ')')(); $('calcDisplay').value = r; calcExpr=String(r);}catch(e){ alert('Invalid expression'); } }
+
+// ====== Dictionary (sample offline) ======
+const DICT = {
+  'thesis':'A long essay or dissertation involving personal research, typically for a university degree.',
+  'syllabus':'An outline of the subjects in a course of study or teaching.',
+  'essay':'A short piece of writing on a particular subject.',
+  'citation':'A reference to a published or unpublished source.'
+};
+function dictSearch(){
+  const w = $('dictWord').value.trim().toLowerCase();
+  if(!w) return alert('Enter a word');
+  const def = DICT[w];
+  $('dictResult').textContent = def || 'Word not found in offline dictionary (demo).';
+}
+
+// ====== Grade Calculator ======
+function renderGradeInputs(){
+  const container = $('gradeInputs'); container.innerHTML='';
+  (state.grades||[]).forEach(g=>{
+    const el = document.createElement('div'); el.style.display='flex'; el.style.gap='8px'; el.style.alignItems='center';
+    el.innerHTML = `<input value="${g.subject}" placeholder="Subject" data-id="${g.id}" class="gsub" /><input value="${g.mark}" placeholder="Mark" data-id="${g.id}" class="gmark" /> <button class="ghost" onclick="removeGrade('${g.id}')">X</button>`;
+    container.appendChild(el);
+  });
+}
+function addGradeRow(){
+  const id = 'g'+Math.random().toString(36).slice(2,8);
+  state.grades.push({id,subject:'',mark:''}); save(); renderGradeInputs();
+}
+function removeGrade(id){ state.grades = state.grades.filter(g=>g.id!==id); save(); renderGradeInputs(); }
+function calcGrades(){
+  // read inputs
+  const subs = Array.from(document.querySelectorAll('.gsub'));
+  const marks = Array.from(document.querySelectorAll('.gmark'));
+  subs.forEach(s=>{ const id=s.dataset.id; const g = state.grades.find(x=>x.id===id); if(g) g.subject = s.value.trim(); });
+  marks.forEach(m=>{ const id=m.dataset.id; const g = state.grades.find(x=>x.id===id); if(g) g.mark = Number(m.value) || 0; });
+  save();
+  const valid = state.grades.filter(g=> g.subject && !isNaN(g.mark));
+  if(valid.length===0){ alert('Add at least one valid subject'); return; }
+  const avg = valid.reduce((s,g)=> s + Number(g.mark), 0) / valid.length;
+  $('gradeOutput').textContent = `Average: ${avg.toFixed(1)}% — ${avg>=75?'Great job!':avg>=50?'Keep pushing':'Work harder'}`;
+  $('gradeAvg').textContent = `${avg.toFixed(1)}%`;
+}
+
+// ====== Converter ======
+function doConvert(){
+  const v = Number($('convVal').value); if(isNaN(v)) return alert('Enter a number');
+  const t = $('convType').value;
+  let out='—';
+  if(t==='length'){ out = `${v} m = ${v*100} cm`;}
+  if(t==='mass'){ out = `${v} kg = ${v*1000} g`;}
+  $('convOut').textContent = 'Result: ' + out;
+}
+
+// ====== Export / Import / Reset ======
+function exportData(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'shuleconnect_export.json'; document.body.appendChild(a); a.click(); a.remove();
+}
+function importData(){
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='application/json';
+  inp.onchange = e => {
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try{
+        const obj = JSON.parse(ev.target.result);
+        if(confirm('Importing will overwrite current data. Continue?')){
+          state = obj; save(); load();
+        }
+      }catch(err){ alert('Invalid file'); }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+function resetAll(){
+  if(!confirm('Reset all ShuleConnect data?')) return;
+  localStorage.removeItem(STORAGE); state = {timetable:{Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]},assignments:[],notes:'',tipsSeen:0,grades:[],theme:'light'}; load(); alert('Reset done');
+}
+
+// ====== UI wiring & rendering ======
+function renderAll(){
+  renderTimetable(); renderAssignments(); renderMiniNotes(); renderGradeInputs();
+}
+function addDemoData(){
+  // demo classes
+  state.timetable = {Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]};
+  state.timetable.Mon.push({id:'d1',subject:'Mathematics',start:'08:00',end:'09:00'});
+  state.timetable.Mon.push({id:'d2',subject:'English',start:'09:00',end:'10:00'});
+  state.timetable.Tue.push({id:'d3',subject:'Biology',start:'10:00',end:'11:00'});
+  // assignments
+  const d = new Date(); d.setDate(d.getDate()+3);
+  state.assignments = [{id:'da1',title:'Maths Homework',subject:'Mathematics',due:d.toISOString().split('T')[0],created:nowDate()}];
+  state.notes = 'Revise chapter 4 and practice past papers.';
+  save(); renderAll(); alert('Demo data added');
+}
+
+// ====== event listeners ======
+$('addSubject').onclick = addClass;
+$('addAssn').onclick = addAssignment;
+$('saveNotes').onclick = saveNotes;
+$('clearNotes').onclick = clearNotes;
+$('newTip').onclick = showTip;
+$('pomStart').onclick = startPomodoro;
+$('openCalc').onclick = ()=>{$('calc').style.display = $('calc').style.display==='none'?'block':'none';};
+$('openDict').onclick = ()=>{$('dict').style.display = $('dict').style.display==='none'?'block':'none';};
+$('openGrade').onclick = ()=>{$('gradeTool').style.display = $('gradeTool').style.display==='none'?'block':'none';};
+$('openConv').onclick = ()=>{$('conv').style.display = $('conv').style.display==='none'?'block':'none';};
+$('dictSearch').onclick = dictSearch;
+$('addGradeRow').onclick = addGradeRow;
+$('calcGrade').onclick = calcGrades;
+$('clearGrades').onclick = ()=>{ state.grades=[]; save(); renderGradeInputs(); $('gradeOutput').textContent='Average: —'; $('gradeAvg').textContent='N/A'; };
+$('doConv').onclick = doConvert;
+$('exportBtn').onclick = exportData;
+$('importBtn').onclick = importData;
+$('resetBtn').onclick = resetAll;
+$('addDemo').onclick = addDemoData;
+$('focusQuick').onclick = ()=>{ startPomodoro(); if(pom.timer) alert('Pomodoro started (25m)'); };
+$('themeToggle').onclick = ()=>{
+  state.theme = state.theme==='dark'?'light':'dark';
+  document.body.setAttribute('data-theme', state.theme==='dark'?'dark':'light');
+  $('themeToggle').textContent = state.theme==='dark' ? 'Light' : 'Dark';
+  save();
+};
+
+// small helpers
+function ensureDefaults(){ if(!state.timetable){ state.timetable = {Mon:[],Tue:[],Wed:[],Thu:[],Fri:[],Sat:[],Sun:[]}; } if(!state.assignments) state.assignments=[]; if(!state.grades) state.grades=[]; }
+window.onload = ()=>{ ensureDefaults(); load(); showTip(); };
+
+// expose some functions to inline handlers
+window.removeSlot = removeSlot;
+window.removeAssignment = removeAssignment;
+window.calcPress = calcPress;
+window.calcClear = calcClear;
+window.calcEval = calcEval;
+window.removeGrade = removeGrade;
+
+</script>
+</body>
+</html>
